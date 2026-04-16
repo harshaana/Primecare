@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Patient Dashboard – PrimeCare Clinic</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PrimeCare">
+  <link rel="apple-touch-icon" href="/static/image/pwa-icon.png">
+
+  <style>
+    /* ── DASHBOARD-SPECIFIC OVERRIDES ── */
+    .dashboard-container {
+      max-width: 800px; margin: 2rem auto; padding: 0 1rem 4rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* ── Welcome Card ── */
+    .user-header {
+      background: linear-gradient(135deg, #0077b6, #0096c7);
+      border-radius: 24px; padding: 1.4rem 1.5rem;
+      color: #fff; box-shadow: 0 10px 25px rgba(0,119,182,0.25);
+      position: relative; overflow: hidden;
+    }
+    .user-header::after {
+      content: ''; position: absolute; right: -20px; top: -40px;
+      width: 150px; height: 150px; background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    .user-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: rgba(255,255,255,0.2); padding: 0.2rem 0.65rem;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+    .user-header h1 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1.2; }
+    .user-profile-row { display: flex; align-items: center; gap: 1rem; }
+    .user-avatar {
+      background: rgba(255,255,255,0.2); border-radius: 50%;
+      width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; backdrop-filter: blur(8px);
+    }
+    .user-info { min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+    .user-quick-nav { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .quick-nav-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: rgba(255,255,255,0.15); backdrop-filter: blur(6px);
+      color: #fff; font-size: 0.78rem; font-weight: 600;
+      padding: 0.38rem 0.85rem; border-radius: 999px;
+      text-decoration: none; border: 1px solid rgba(255,255,255,0.3);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .quick-nav-btn:hover { background: rgba(255,255,255,0.28); }
+
+    /* ── Glass Cards ── */
+    .glass-card {
+      background: rgba(255,255,255,0.85); backdrop-filter: blur(16px);
+      border-radius: 20px; padding: 1.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+      border: 1px solid rgba(255,255,255,1);
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0; margin-top: -5px; padding-bottom: 0.7rem;
+      border-bottom: 2px solid rgba(0,119,182,0.1);
+    }
+    .section-header h2 {
+      margin: 0; font-size: 1.3rem; color: #023e8a; font-weight: 700;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .section-action-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: #0077b6; color: #fff; border: none;
+      padding: 0.4rem 0.85rem; border-radius: 12px; font-size: 0.82rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,119,182,0.2); margin-top: 0;
+    }
+    .section-action-btn:hover { background: #005f8a; transform: translateY(-1px); }
+    .section-action-btn.outline {
+      background: transparent; color: #0077b6; border: 1.5px solid rgba(0,119,182,0.25); box-shadow: none;
+    }
+    .section-action-btn.outline:hover { background: rgba(0,119,182,0.06); }
+
+    /* ── Booking Tabs ── */
+    .booking-tabs {
+      display: flex; gap: 0; margin-top: 0.3rem; margin-bottom: 1.2rem;
+    }
+    .booking-tab {
+      flex: 1; text-align: center; padding: 0.5rem 0.8rem;
+      font-size: 0.88rem; font-weight: 600; color: #94a3b8;
+      border: none; background: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .booking-tab:hover { color: #64748b; }
+    .booking-tab.active {
+      color: #0077b6; font-weight: 800;
+    }
+    .booking-tab .tab-count {
+      background: #f1f5f9; color: #64748b; font-size: 0.72rem; font-weight: 700;
+      padding: 0.1rem 0.5rem; border-radius: 999px; min-width: 18px;
+      transition: all 0.2s;
+    }
+    .booking-tab.active .tab-count { background: #0077b6; color: #fff; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    
+    @keyframes ios-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.4); transform: scale(1); }
+      70% { box-shadow: 0 0 0 10px rgba(0, 119, 182, 0); transform: scale(1.05); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0); transform: scale(1); }
+    }
+    @keyframes slideUpCard {
+      from { transform: translateY(100%) translateX(-50%); opacity: 0; }
+      to { transform: translateY(0) translateX(-50%); opacity: 1; }
+    }
+
+    /* ── Item Cards ── */
+    .item-list { display: flex; flex-direction: column; gap: 1rem; }
+    .item-card {
+      background: #fff; border-radius: 16px; padding: 1.2rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 1rem; flex-wrap: wrap; transition: transform 0.2s;
+    }
+    .item-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,119,182,0.08); }
+    .item-info { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.3rem; }
+    .item-title { font-weight: 700; color: #0f172a; font-size: 1.05rem; }
+    .item-meta { display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    .meta-tag { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .token-badge { background: #e0f2fe; color: #0284c7; padding: 0.2rem 0.6rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; }
+    .item-actions { display: flex; gap: 0.5rem; }
+    .btn-view {
+      background: #f0fdf4; color: #16a34a; border: none;
+      padding: 0.4rem 0.9rem; border-radius: 10px; font-weight: 600; cursor: pointer;
+      display: inline-flex; gap: 0.4rem; align-items: center;
+      transition: all 0.2s; text-decoration: none; font-size: 0.85rem; margin-top: 0;
+    }
+    .btn-view:hover { background: #16a34a; color: #fff; }
+    .btn-danger-sm {
+      background: #fff1f2; color: #e11d48; border: none;
+      padding: 0.4rem 0.9rem; border-radius: 10px; cursor: pointer;
+      display: inline-flex; gap: 0.4rem; align-items: center; font-size: 0.85rem; margin-top: 0;
+      transition: all 0.2s;
+    }
+    .btn-danger-sm:hover { background: #e11d48; color: #fff; }
+    .empty-state { text-align: center; padding: 2rem 1rem; color: #94a3b8; font-weight: 500; }
+    .empty-state svg { margin-bottom: 0.5rem; opacity: 0.5; }
+    .empty-state-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 1rem;
+      background: #0077b6; color: #fff; border: none; padding: 0.6rem 1.3rem;
+      border-radius: 12px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,119,182,0.2);
+    }
+    .empty-state-btn:hover { background: #005f8a; transform: translateY(-1px); }
+
+    /* ── PREMIUM CONTACT SECTION (ULTRA-MODERN) ── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+    .contact-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 1.4rem 0.8rem;
+      text-align: center;
+      box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 15px -3px rgba(0, 0, 0, 0.08),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .contact-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
+      opacity: 0.5; pointer-events: none;
+    }
+    .contact-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+    }
+    .contact-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: white;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+      transition: transform 0.3s ease;
+    }
+    .contact-card:hover .contact-icon { transform: rotate(8deg) scale(1.1); }
+    .contact-icon svg { width: 24px; height: 24px; }
+    
+    .contact-card h4 { 
+      margin: 0.2rem 0 0.1rem; 
+      font-size: 0.95rem; 
+      font-weight: 800; 
+      color: #0f172a; 
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .contact-text-primary { 
+      font-size: 0.82rem; 
+      font-weight: 700; 
+      color: #334155; 
+      margin: 0;
+    }
+    .contact-text-sub { 
+      font-size: 0.68rem; 
+      font-weight: 600; 
+      color: #64748b; 
+      margin: 0;
+      opacity: 0.85;
+    }
+    
+    /* Premium Themes */
+    .contact-phone .contact-icon { color: #0077b6; border: 1px solid rgba(0, 119, 182, 0.15); }
+    .contact-phone:hover { box-shadow: 0 25px 50px -12px rgba(0, 119, 182, 0.2); }
+    
+    .contact-whatsapp .contact-icon { color: #25d366; border: 1px solid rgba(37, 211, 102, 0.15); }
+    .contact-whatsapp:hover { box-shadow: 0 25px 50px -12px rgba(37, 211, 102, 0.2); }
+    
+    .contact-location .contact-icon { color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.15); }
+    .contact-location:hover { box-shadow: 0 25px 50px -12px rgba(244, 63, 94, 0.2); }
+
+    /* ── Notification Tray Icon (Bell) ── */
+    #notifTrayFab {
+      position: fixed; top: 72px; right: 16px; z-index: 8900;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 119, 182, 0.2); cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      color: #0077b6;
+    }
+    #notifTrayFab.show { display: flex; animation: fabPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    #notifTrayFab:hover { transform: scale(1.1); background: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
+    #notifTrayFab span svg, #notifTrayFab i { width: 16px; height: 16px; }
+    #notifTrayFab .notif-badge {
+      position: absolute; top: -1px; right: 0px; width: 10px; height: 10px;
+      background: #ef4444; border-radius: 50%; border: 2px solid #fff;
+      animation: pulse 2s infinite;
+    }
+    @keyframes fabPop { from { transform: scale(0) rotate(-45deg); opacity:0; } to { transform: scale(1) rotate(0); opacity:1; } }
+
+    /* ── Updated Dual-Stat Banner ── */
+    #homeTokenBanner {
+      position: fixed; top: 15px; left: 50%; transform: translateX(-50%) translateY(-150%);
+      width: 92%; max-width: 500px; z-index: 2000;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+      border-radius: 28px; padding: 0.9rem 1.2rem;
+      border: 1.5px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,119,182,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+      transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s ease;
+      cursor: grab;
+      user-select: none;
+      touch-action: pan-x;
+    }
+    #homeTokenBanner:active { cursor: grabbing; }
+    #homeTokenBanner.show { transform: translateX(-50%) translateY(0); }
+    
+    .banner-left { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .banner-status { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .banner-status i { color: #ef4444; }
+    .banner-doctor { font-size: 1rem; font-weight: 850; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+    
+    .banner-stats { display: flex; gap: 1rem; align-items: center; padding-left: 1rem; border-left: 1.5px solid rgba(0,0,0,0.06); }
+    .banner-stat-item { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+    .stat-label { font-size: 0.62rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px; white-space: nowrap; }
+    .stat-val { font-size: 1.6rem; font-weight: 950; letter-spacing: -0.02em; line-height: 1; }
+    .stat-live { color: #10b981; }
+    .stat-mine { color: #0077b6; }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0)); }
+      50% { opacity: 0.6; transform: scale(0.85); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4)); }
+      100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 0 rgba(239, 68, 68, 0)); }
+    }
+    
+    /* ── GLOBAL MINIMALIST FOOTER ── */
+    .site-footer {
+      padding: 3.5rem 1.5rem 1.25rem;
+      text-align: center;
+      margin-top: auto;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.6rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .footer-link {
+      color: #334155;
+      text-decoration: none;
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .footer-link svg { width: 14px; height: 14px; color: #0077b6; }
+    .footer-link:hover { color: #0077b6; transform: translateY(-1px); }
+    .footer-copy { 
+      font-size: 0.8rem; 
+      color: #94a3b8; 
+      font-weight: 500; 
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    @media (max-width: 600px) {
+      .contact-grid { gap: 8px; }
+      .contact-card { padding: 0.85rem 0.35rem; border-radius: 14px; }
+      .contact-card h4 { font-size: 0.78rem; font-weight: 800; }
+      .contact-card p { font-size: 0.64rem; font-weight: 600; }
+      .contact-icon { width: 34px; height: 34px; border-radius: 10px; }
+      .contact-icon svg { width: 18px; height: 18px; }
+      .footer-links { gap: 1.1rem; }
+      .footer-link { font-size: 0.8rem; }
+    }
+
+    /* ── Header: icon-only on mobile ── */
+    @media (max-width: 520px) {
+      .top-bar-inner {
+        flex-direction: row; align-items: center;
+        justify-content: space-between; padding: 0.5rem 0.85rem; gap: 0.5rem;
+      }
+      .brand { align-items: flex-start; flex-shrink: 1; min-width: 0; }
+      .brand-title { font-size: 1.0rem; }
+      .brand-sub { font-size: 0.65rem; }
+      
+      /* Buttons stack vertically on the RIGHT side */
+      .top-actions {
+        display: flex; flex-direction: column; flex-shrink: 0; gap: 0.28rem; align-items: flex-end;
+      }
+      .top-actions .btn {
+        font-size: 0.75rem; padding: 0.28rem 0.65rem; margin-top: 0;
+        white-space: nowrap; min-width: 90px;
+      }
+      .top-actions .btn svg { width: 12px; height: 12px; }
+      .user-header h1 { font-size: 1.3rem; }
+      .glass-card { padding: 1.2rem 1rem; }
+    }
+
+    /* ── MODAL SYSTEM ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(10px);
+      z-index: 10000; align-items: center; justify-content: center;
+      padding: 1.25rem; animation: modalFade 0.3s ease;
+    }
+    .modal-content {
+      background: #fff; padding: 2.2rem 2rem; border-radius: 28px;
+      max-width: 440px; width: 100%; box-shadow: 0 40px 100px rgba(15, 23, 42, 0.35);
+      border: 1px solid #fff; position: relative;
+      animation: modalPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .pres-modal-content { 
+        background: #fff; padding: 2rem; border-radius: 24px; max-width: 450px; width: 100%; position: relative;
+        animation: modalPop 0.4s ease;
+    }
+    @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modalPop { from { transform: scale(0.92) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+    @media (max-width: 600px) {
+      .dashboard-container { padding: 0 0.8rem 3rem; margin-top: 1rem; gap: 1rem; }
+      .user-header h1 { font-size: 1.25rem !important; }
+      .user-avatar { width: 40px; height: 40px; }
+      .user-avatar svg { width: 20px !important; height: 20px !important; }
+      .section-header h2 { font-size: 1rem; }
+      .section-header h2 svg { width: 16px; height: 16px; }
+      .section-action-btn span { display: none; }
+      .section-action-btn { padding: 0.38rem; width: 32px; height: 32px; border-radius: 10px; justify-content: center; }
+      .item-card { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+      .item-actions { width: 100%; }
+      .btn-danger-sm, .btn-view { flex: 1; justify-content: center; }
+      .quick-nav-btn { font-size: 0.72rem; padding: 0.3rem 0.7rem; }
+      .booking-tab { font-size: 0.78rem; padding: 0.45rem 0.5rem; }
+      .glass-card { padding: 1.2rem; }
+    }
+
+    /* ── Premium Prescription Modal ── */
+    .pres-modal-content {
+      background: #fff; border-radius: 24px; padding: 2rem 1.8rem;
+      max-width: 480px; width: 92%; position: relative;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+      animation: slideUp 0.35s ease;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pres-modal-header {
+      display: flex; align-items: center; gap: 0.7rem;
+      margin-bottom: 1.5rem; padding-bottom: 1rem;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    .pres-modal-header .icon-circle {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, #0077b6, #0096c7);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .pres-modal-header h3 { margin: 0; font-size: 1.2rem; font-weight: 800; color: #0f172a; }
+    .pres-modal-header p { margin: 0.15rem 0 0; font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+    .pres-close-btn {
+      position: absolute; top: 1rem; right: 1rem;
+      background: #f8fafc; border: 1px solid #e2e8f0; width: 32px; height: 32px;
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #64748b; transition: all 0.2s;
+    }
+    .pres-close-btn:hover { background: #fee2e2; color: #e11d48; border-color: #fecaca; }
+    .pres-form-group { margin-bottom: 1rem; }
+    .pres-form-group label {
+      display: flex; align-items: center; gap: 0.3rem;
+      font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.4rem;
+    }
+    .pres-form-group label svg { width: 13px; height: 13px; color: #0077b6; }
+    .pres-form-group input, .pres-form-group select {
+      width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid #e2e8f0;
+      border-radius: 12px; font-size: 0.92rem; font-family: inherit;
+      box-sizing: border-box; background: #f8fafc; transition: border-color 0.2s; color: #0f172a;
+    }
+    .pres-form-group input:focus, .pres-form-group select:focus {
+      outline: none; border-color: #0077b6; background: #fff;
+      box-shadow: 0 0 0 3px rgba(0,119,182,0.1);
+    }
+    .pres-form-group input[type="file"] { padding: 0.5rem 0.9rem; cursor: pointer; }
+    .pres-submit-btn {
+      width: 100%; padding: 0.8rem; margin-top: 0.8rem;
+      background: linear-gradient(135deg, #0077b6, #0096c7);
+      color: #fff; border: none; border-radius: 14px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      box-shadow: 0 8px 20px rgba(0,119,182,0.25); transition: all 0.2s;
+    }
+    .pres-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(0,119,182,0.3); }
+    .pres-submit-btn:disabled { opacity: 0.6; transform: none; }
+    #reschedBtn {
+        background: #0077b6; color: #fff; border: none;
+        padding: 0.4rem 0.9rem; border-radius: 10px; font-weight: 600; cursor: pointer;
+        display: inline-flex; gap: 0.4rem; align-items: center; text-decoration: none; font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    #reschedBtn:hover { background: #005f8a; transform: translateY(-1px); }
+    .holiday-alert {
+        background: #fff1f2; border: 1.5px solid #fecaca; border-radius: 12px;
+        padding: 0.8rem 1rem; margin-bottom: 0.8rem; display: flex; align-items: flex-start; gap: 0.6rem;
+        animation: pulseSoft 2s infinite;
+    }
+    @keyframes pulseSoft {
+        0% { border-color: #fecaca; }
+        50% { border-color: #fca5a5; }
+        100% { border-color: #fecaca; }
+    }
+  </style>
+</head>
+<body class="bg-image">
+  <div id="globalToast"></div>
+  <div class="bg-blur"></div>
+
+  <!-- HEADER -->
+  <header class="top-bar">
+    <div class="top-bar-inner">
+      <div class="brand" style="display:flex;flex-direction:row;align-items:center;gap:0.45rem;flex-shrink:1;min-width:0; text-decoration: none;">
+        <img src="{{ url_for('static', filename='primecare-logo.svg') }}"
+             style="width:34px;height:34px;object-fit:contain;flex-shrink:0;"
+             alt="PrimeCare Logo" />
+        <div style="display:flex;flex-direction:column;gap:1px;min-width:0;">
+          <div class="brand-title">PrimeCare Clinic</div>
+          <div class="brand-sub">Quality care · Trusted doctors</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-outline" onclick="window.location.href='/'" style="margin-top:0;" title="Go Home">
+          <i data-lucide="house"></i>
+          <span>Home</span>
+        </button>
+        <button class="btn btn-outline" onclick="confirmLogout()" style="color:#e11d48; border-color:rgba(225,29,72,0.3); margin-top:0;" title="Logout">
+          <i data-lucide="log-out"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-container">
+    <!-- User Welcome Card -->
+    <div class="user-header">
+      <div class="user-profile-row">
+        <div class="user-avatar">
+          <i data-lucide="user-round" style="width: 24px; height: 24px; color:#fff;"></i>
+        </div>
+        <div class="user-info">
+          <div class="user-badge"><i data-lucide="shield-check" style="width:12px;height:12px;"></i>Verified Account</div>
+          <h1 style="text-align: start;">{{ session.get('user_name', 'Patient') }}</h1>
+          <p style="font-size: 0.78rem; opacity: 0.7; margin: 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#fff;">{{ session.get('user_email') }}</p>
+        </div>
+      </div>
+      <div class="user-quick-nav">
+        <a href="#bookingsSection" class="quick-nav-btn">
+          <i data-lucide="calendar" style="width:13px;height:13px;"></i> My Bookings
+        </a>
+        <a href="#prescriptionsSection" class="quick-nav-btn">
+          <i data-lucide="file-text" style="width:13px;height:13px;"></i> Prescriptions
+        </a>
+        <a href="/booking" class="quick-nav-btn">
+          <i data-lucide="calendar-plus" style="width:13px;height:13px;"></i> New Booking
+        </a>
+        <a onclick="openPrescriptionModal()" class="quick-nav-btn">
+          <i data-lucide="file-plus" style="width:13px;height:13px;"></i> Add Prescription
+        </a>
+        <a href="/live-tracking" class="quick-nav-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4);">
+          <i data-lucide="radio" style="width:13px;height:13px;"></i> Live Token Track
+        </a>
+        {% if can_switch %}
+        <a onclick="confirmRoleSwitch()" class="quick-nav-btn" style="background:#10b981; border-color:#10b981;">
+          <i data-lucide="repeat" style="width:13px;height:13px;"></i> Switch to Doctor Account
+        </a>
+        {% endif %}
+          
+      </div>
+    </div>
+
+    <!-- BOOKINGS SECTION -->
+    <div class="glass-card" id="bookingsSection">
+      <div class="section-header">
+        <h2><i data-lucide="calendar" style="width:18px;height:18px;"></i> My Bookings</h2>
+        <a href="/booking" class="section-action-btn"><i data-lucide="plus" style="width:14px;height:14px;"></i> <span>New Booking</span></a>
+      </div>
+
+      <!-- Upcoming / Past Tabs -->
+      <div class="booking-tabs" style="margin-top: -10px;">
+        <button class="booking-tab active" onclick="switchBookingTab('upcoming')" id="tab-upcoming">
+          <i data-lucide="clock" style="width:14px;height:14px;"></i> Upcoming
+          <span class="tab-count">{{ upcoming_bookings|length }}</span>
+        </button>
+        <button class="booking-tab" onclick="switchBookingTab('past')" id="tab-past">
+          <i data-lucide="history" style="width:14px;height:14px;"></i> Past
+          <span class="tab-count">{{ past_bookings|length }}</span>
+        </button>
+      </div>
+
+      <!-- Upcoming Panel -->
+      <div class="tab-panel active" id="panel-upcoming">
+        <div class="item-list">
+          {% if upcoming_bookings %}
+            {% for b in upcoming_bookings %}
+            <div class="item-card" {% if b.is_holiday %}style="border: 2px solid #fca5a5; position: relative;"{% endif %}>
+              <div class="item-info">
+                {% if b.is_holiday %}
+                <div class="holiday-alert">
+                  <i data-lucide="alert-triangle" style="width:18px;height:18px;color:#e11d48;flex-shrink:0;"></i>
+                  <div>
+                    <div style="font-weight:800; color:#e11d48; font-size:0.9rem;">Clinic Holiday on this Day</div>
+                    <div style="font-size:0.82rem; color:#991b1b; font-weight:500;">
+                        The clinic is closed for {{ b.holiday_reason }}. Please book for another day.
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
+                <div class="item-title">{{ b.doctor_name }} <span style="font-weight:500;color:#64748b;font-size:0.9rem;">({{ b.specialization }})</span></div>
+                <div class="item-meta">
+                  <span class="meta-tag" style="background:#f1f5f9; padding:0.15rem 0.45rem; border-radius:6px; color:#475569;"><i data-lucide="user" style="width:12px;height:12px;"></i> {{ b.patient_name }} {% if b.age and b.age != '-' %}({{ b.age }} y/o){% endif %}</span>
+                  <span class="meta-tag"><i data-lucide="calendar-days" style="width:13px;height:13px;"></i> {{ b.date }}</span>
+                  <span class="meta-tag"><i data-lucide="clock" style="width:13px;height:13px;"></i> {{ b.time }}</span>
+                  <span class="token-badge">Token #{{ b.token }}</span>
+                </div>
+              </div>
+              <div class="item-actions">
+                {% if b.is_holiday %}
+                <a href="/booking" id="reschedBtn"><i data-lucide="calendar-plus"></i> Book Another Day</a>
+                {% endif %}
+                <button class="btn-danger-sm" onclick="cancelBooking('{{ b.sheet_url }}', '{{ b.date }}', '{{ b.token }}', {{ b.id }})" aria-label="Cancel Booking">
+                  <i data-lucide="x" style="width:14px;height:14px;"></i> Cancel
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <i data-lucide="calendar-check" style="width:40px;height:40px;"></i>
+              <p>No upcoming bookings</p>
+              <a href="/booking" class="empty-state-btn"><i data-lucide="calendar-plus" style="width:15px;height:15px;"></i> Book Now</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Past Panel -->
+      <div class="tab-panel" id="panel-past">
+        <div class="item-list">
+          {% if past_bookings %}
+            {% for b in past_bookings %}
+            <div class="item-card" style="opacity:0.75;">
+              <div class="item-info">
+                <div class="item-title">{{ b.doctor_name }} <span style="font-weight:500;color:#64748b;font-size:0.9rem;">({{ b.specialization }})</span></div>
+                <div class="item-meta">
+                  <span class="meta-tag" style="background:#f1f5f9; padding:0.15rem 0.45rem; border-radius:6px; color:#475569;"><i data-lucide="user" style="width:12px;height:12px;"></i> {{ b.patient_name }} {% if b.age and b.age != '-' %}({{ b.age }} y/o){% endif %}</span>
+                  <span class="meta-tag"><i data-lucide="calendar-days" style="width:13px;height:13px;"></i> {{ b.date }}</span>
+                  <span class="meta-tag"><i data-lucide="clock" style="width:13px;height:13px;"></i> {{ b.time }}</span>
+                  <span class="token-badge">Token #{{ b.token }}</span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">
+              <i data-lucide="archive" style="width:40px;height:40px;"></i>
+              <p>No past bookings</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESCRIPTIONS SECTION -->
+    <div class="glass-card" id="prescriptionsSection">
+      <div class="section-header">
+        <h2><i data-lucide="file-text" style="width:18px;height:18px;"></i> My Prescriptions</h2>
+        <button class="section-action-btn" onclick="openPrescriptionModal()"><i data-lucide="upload" style="width:14px;height:14px;"></i> <span>Upload</span></button>
+      </div>
+      <div class="item-list" id="prescriptionsList">
+        {% if prescriptions %}
+          {% for p in prescriptions %}
+          <div class="item-card" style="margin-top: 5px;">
+            <div class="item-info">
+              <div class="item-title"><i data-lucide="file-text" style="width:14px;height:14px;color:#0077b6;display:inline;vertical-align:-2px;margin-right:0.3rem;"></i>{{ p.patient_name }}</div>
+              <div class="item-meta">
+                <span class="meta-tag"><i data-lucide="calendar-days" style="width:13px;height:13px;"></i> {{ p.consultation_date }}</span>
+                {% if p.doctor_name %}<span class="meta-tag"><i data-lucide="stethoscope" style="width:13px;height:13px;"></i> {{ p.doctor_name }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="item-actions">
+              {% if p.file_path %}
+              <a href="{{ p.file_path }}" target="_blank" class="btn-view" style="color:#0077b6; background:#e0f2fe;"><i data-lucide="eye" style="width:14px;height:14px;"></i> View</a>
+              {% endif %}
+              <button class="btn-danger-sm" onclick="confirmDeletePrescription({{ p.id }})" aria-label="Delete">
+                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i data-lucide="file-minus" style="width:40px;height:40px;"></i>
+            <p>No prescriptions stored yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PRESCRIPTION MODAL -->
+  <div class="modal-overlay" id="presModal">
+    <div class="pres-modal-content">
+      <button class="pres-close-btn" onclick="closePrescriptionModal()"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+      <div class="pres-modal-header">
+        <div class="icon-circle"><i data-lucide="file-plus" style="width:20px;height:20px;"></i></div>
+        <div>
+          <h3>Add Prescription</h3>
+          <p>Upload and store your medical document</p>
+        </div>
+      </div>
+      <form id="presForm" onsubmit="handlePrescriptionSubmit(event)">
+        <div class="pres-form-group">
+          <label><i data-lucide="user"></i> Patient Name</label>
+          <input type="text" id="pres-name" required placeholder="Full Name" />
+        </div>
+        <div class="pres-form-group">
+          <label><i data-lucide="calendar"></i> Consultation Date</label>
+          <input type="date" id="pres-date" required />
+        </div>
+        <div class="pres-form-group">
+          <label><i data-lucide="stethoscope"></i> Doctor (Optional)</label>
+          <select id="pres-doc">
+            <option value="">Select Doctor</option>
+            {% for doc in all_doctors %}
+            <option value="{{ doc.Name }}">{{ doc.Name }} — {{ doc.Specialization }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="pres-form-group">
+          <label><i data-lucide="paperclip"></i> Upload Document</label>
+          <input type="file" id="pres-file" accept="image/*,application/pdf" required />
+        </div>
+        <button type="submit" class="pres-submit-btn" id="presSubmitBtn">
+          <i data-lucide="upload" style="width:16px;height:16px;"></i> Upload & Save
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Universal Confirmation Modal -->
+  <div class="modal-overlay" id="universalModal">
+    <div class="modal-content" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+      <div class="modal-icon-container" id="unvIconContainer" style="background: rgba(0, 119, 182, 0.1); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #0077b6; flex-shrink: 0;">
+        <i data-lucide="help-circle" style="width: 32px; height: 32px;"></i>
+      </div>
+      <h3 id="unvTitle" style="margin: 0 auto 0.5rem auto; color: #0f172a; font-size: 1.4rem; font-weight: 800; text-align: center; width: 100%;">Confirm Action</h3>
+      <p id="unvMessage" style="color: #64748b; font-size: 1.05rem; margin: 0 auto 2.2rem auto; line-height: 1.6; text-align: center; width: 100%;">Are you sure you want to proceed?</p>
+      <div class="modal-btns" style="display: flex; gap: 1.2rem; justify-content: center; width: 100%;">
+        <button class="btn btn-outline" onclick="closeUniversalModal()" style="border-radius: 16px; padding: 0.8rem 1.6rem; margin: 0;">Cancel</button>
+        <button id="unvConfirmBtn" class="btn btn-primary" style="background: #0077b6; box-shadow: 0 12px 30px rgba(0, 119, 182, 0.35); border:none; border-radius: 16px; padding: 0.8rem 1.6rem; margin: 0;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Tray FAB -->
+  <button id="notifTrayFab" onclick="restoreBanner()" title="Restore Token Tracking">
+    <div class="notif-badge"></div>
+    <i data-lucide="bell"></i>
+  </button>
+
+  <!-- Live Token Floating Banner (Sync with Home) -->
+  <div id="homeTokenBanner" onclick="window.location.href='/live-tracking?doctor=' + encodeURIComponent(this.dataset.doc) + '&date=' + this.dataset.date">
+    <div class="banner-left">
+      <div class="banner-status">
+        <i data-lucide="radio" class="pulse"></i> 
+        <span id="bannerStatusText">Live Status</span>
+      </div>
+      <div class="banner-doctor" id="bannerDocName">--</div>
+    </div>
+    <div class="banner-stats">
+      <div class="banner-stat-item">
+        <span class="stat-label">Live</span>
+        <span class="stat-val stat-live" id="bannerLiveToken">--</span>
+      </div>
+      <div class="banner-stat-item">
+        <span class="stat-label">Your Token</span>
+        <span class="stat-val stat-mine" id="bannerYourToken">--</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer" style="background: none;">
+    <!-- PREMIUM CONTACT SECTION -->
+    <div class="contact-grid">
+      <a href="tel:+918592031725" class="contact-card contact-phone">
+        <div class="contact-icon"><i data-lucide="phone"></i></div>
+        <h4>Call Us</h4>
+        <p class="contact-text-primary">8592031725</p>
+        <p class="contact-text-sub">Enquiries & Cancellation</p>
+      </a>
+      <a href="https://wa.me/918592031725" target="_blank" class="contact-card contact-whatsapp">
+        <div class="contact-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.436 5.628 1.436h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </div>
+        <h4>WhatsApp</h4>
+        <p class="contact-text-primary">8592031725</p>
+        <p class="contact-text-sub">WhatsApp Enquiry</p>
+      </a>
+      <a href="https://www.google.com/maps/place/7J3QGRQW%2B96J/@11.5384625,75.8429407,17z/data=!3m1!4b1!4m4!3m3!8m2!3d11.5384625!4d75.8455156?entry=ttu" target="_blank" class="contact-card contact-location">
+        <div class="contact-icon"><i data-lucide="map-pin"></i></div>
+        <h4>Location</h4>
+        <p class="contact-text-primary">Koorachundu</p>
+        <p class="contact-text-sub">Get Directions</p>
+      </a>
+    </div>
+
+    <div class="footer-links" style="margin-top: 2rem;">
+      <a href="/" class="footer-link">
+        <i data-lucide="house"></i>Home
+      </a>
+      <a href="/#timings" class="footer-link">
+        <i data-lucide="clock"></i>Doctors Timings
+      </a>
+      <a href="/booking" class="footer-link">
+        <i data-lucide="calendar-plus"></i>Book Appointment
+      </a>
+      <a href="javascript:void(0)" onclick="confirmLogout()" class="footer-link" style="color: #e11d48;">
+        <i data-lucide="log-out"></i>Logout
+      </a>
+    </div>
+
+    <div class="footer-content">
+      <p class="footer-copy">&copy; 2026 PrimeCare Clinic. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    // ── Smooth scroll for anchor nav ──
+    document.querySelectorAll('.quick-nav-btn[href^="#"]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(btn.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // ── Booking Tabs ──
+    function switchBookingTab(tab) {
+      document.querySelectorAll('.booking-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.getElementById('panel-' + tab).classList.add('active');
+    }
+
+    // ── Universal Modal ──
+    let activeModalAction = null;
+    function openUniversalModal(title, message, actionText, actionFn, isDanger = false) {
+      document.getElementById('unvTitle').textContent = title;
+      document.getElementById('unvMessage').textContent = message;
+      const btn = document.getElementById('unvConfirmBtn');
+      btn.textContent = actionText;
+      btn.style.background = isDanger ? '#e11d48' : '#0077b6';
+      btn.style.boxShadow = isDanger ? '0 12px 30px rgba(225, 29, 72, 0.35)' : '0 12px 30px rgba(0, 119, 182, 0.35)';
+      
+      const container = document.getElementById('unvIconContainer');
+      const iconName = isDanger ? 'alert-triangle' : 'help-circle';
+      container.innerHTML = `<i data-lucide="${iconName}" style="width: 32px; height: 32px;"></i>`;
+      
+      if(isDanger) {
+         container.style.color = '#e11d48';
+         container.style.background = 'rgba(225, 29, 72, 0.1)';
+      } else {
+         container.style.color = '#0077b6';
+         container.style.background = 'rgba(0, 119, 182, 0.1)';
+      }
+      lucide.createIcons();
+      activeModalAction = actionFn;
+      document.getElementById('universalModal').style.display = 'flex';
+    }
+    function closeUniversalModal() {
+      document.getElementById('universalModal').style.display = 'none';
+      activeModalAction = null;
+    }
+    document.getElementById('unvConfirmBtn').addEventListener('click', () => {
+      if (activeModalAction) activeModalAction();
+      closeUniversalModal();
+    });
+
+    // ── Toast ──
+    function showToast(msg, type='success') {
+      const toast = document.getElementById('globalToast');
+      toast.className = 'toast-' + type;
+      toast.innerHTML = (type === 'success' ? '<i data-lucide="check-circle" style="width:22px;height:22px;"></i> ' : '<i data-lucide="alert-circle" style="width:22px;height:22px;"></i> ') + msg;
+      lucide.createIcons();
+      toast.style.display = 'flex';
+      setTimeout(() => toast.style.display = 'none', 3500);
+    }
+
+    // ── Logout ──
+    function confirmLogout() {
+      openUniversalModal('Confirm Logout', 'Are you sure you want to securely log out of your session?', 'Logout', async () => {
+        await fetch('/patient_logout', { method: 'POST' });
+        window.location.href = '/';
+      }, true);
+    }
+
+    // ── Cancel Booking ──
+    function cancelBooking(sheetUrl, dateStr, tokenStr, dbId) {
+      openUniversalModal('Cancel Booking', `Are you sure you want to cancel Token #${tokenStr} on ${dateStr}? This action cannot be undone.`, 'Cancel Booking', async () => {
+        const res = await fetch('/cancel_own_booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheet_url: sheetUrl, date: dateStr, token: tokenStr, id: dbId })
+        });
+        const data = await res.json();
+        if(data.success) {
+          showToast(data.msg, 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showToast(data.msg, 'error');
+        }
+      }, true);
+    }
+
+    // ── Prescription Modal ──
+    function openPrescriptionModal() {
+      document.getElementById('presModal').style.display = 'flex';
+      lucide.createIcons();
+    }
+    function closePrescriptionModal() {
+      document.getElementById('presModal').style.display = 'none';
+      document.getElementById('presForm').reset();
+    }
+
+    async function handlePrescriptionSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('presSubmitBtn');
+      btn.innerHTML = '<i data-lucide="loader" style="width:16px;height:16px;"></i> Uploading...';
+      btn.disabled = true;
+
+      const fd = new FormData();
+      fd.append('patient_name', document.getElementById('pres-name').value);
+      fd.append('consultation_date', document.getElementById('pres-date').value);
+      fd.append('doctor_name', document.getElementById('pres-doc').value);
+      fd.append('file', document.getElementById('pres-file').files[0]);
+
+      try {
+        const res = await fetch('/add_prescription', { method: 'POST', body: fd });
+        const data = await res.json();
+        if(data.success) {
+          showToast('Prescription added!', 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showToast(data.msg || 'Error adding prescription', 'error');
+        }
+      } catch (err) {
+        showToast('Network error', 'error');
+      } finally {
+        btn.innerHTML = '<i data-lucide="upload" style="width:16px;height:16px;"></i> Upload & Save';
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    }
+
+    // ── Delete Prescription ──
+    function confirmDeletePrescription(id) {
+      openUniversalModal('Delete Document', 'Are you sure you want to delete this prescription? It will be permanently removed.', 'Delete', async () => {
+        const res = await fetch('/delete_prescription', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if(data.success) {
+          showToast('Deleted', 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          showToast(data.msg, 'error');
+        }
+      }, true);
+    }
+    
+    // ─── PWA Service Worker Registration ───
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(reg => {
+            console.log('Service Worker registered:', reg.scope);
+            if (Notification.permission === 'granted') {
+              try {
+                const vapidPublicKey = 'BOoeVMyifl6JFZhRdmlSNpg5vvdTAUAXZqrAMX3ONaZoffmW48-ohbJFUzZzhxkvxxm_z7gwmpf0-xqoe6dMpEU';
+                const padding = '='.repeat((4 - vapidPublicKey.length % 4) % 4);
+                const base64 = (vapidPublicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+                for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
+                
+                reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: outputArray
+                }).then(subscription => {
+                    fetch('/api/save_subscription', {
+                      method: 'POST',
+                      body: JSON.stringify(subscription),
+                      headers: { 'Content-Type': 'application/json' }
+                    });
+                }).catch(e => {});
+              } catch(e) {}
+            }
+          })
+          .catch(err => console.log('Service Worker registration failed:', err));
+      });
+    }
+
+    (function() {
+      const banner = document.getElementById('homeTokenBanner');
+      const tray = document.getElementById('notifTrayFab');
+      const docName = document.getElementById('bannerDocName');
+      const liveTokenEl = document.getElementById('bannerLiveToken');
+      const yourTokenEl = document.getElementById('bannerYourToken');
+      const statusText = document.getElementById('bannerStatusText');
+      
+      let isDismissed = localStorage.getItem('tokenBannerDismissed') === 'true';
+      let hasNotification = false;
+
+      // ── Swipe Logic ──
+      let startX = 0;
+      let currentX = 0;
+      let isSwiping = false;
+
+      if (banner) {
+        banner.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX;
+          isSwiping = true;
+          banner.style.transition = 'none';
+        });
+
+        banner.addEventListener('touchmove', e => {
+          if (!isSwiping) return;
+          currentX = e.touches[0].clientX - startX;
+          banner.style.transform = `translateX(calc(-50% + ${currentX}px)) translateY(0)`;
+          banner.style.opacity = 1 - Math.abs(currentX) / 300;
+        });
+
+        banner.addEventListener('touchend', e => {
+          isSwiping = false;
+          banner.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease';
+          if (Math.abs(currentX) > 120) {
+            dismissBanner();
+          } else {
+            banner.style.transform = 'translateX(-50%) translateY(0)';
+            banner.style.opacity = '1';
+          }
+          currentX = 0;
+        });
+      }
+
+      window.dismissBanner = function() {
+        isDismissed = true;
+        localStorage.setItem('tokenBannerDismissed', 'true');
+        banner.style.transform = currentX > 0 ? 'translateX(100vw)' : 'translateX(-100vw)';
+        banner.style.opacity = '0';
+        setTimeout(() => {
+          banner.classList.remove('show');
+          if (hasNotification) tray.classList.add('show');
+        }, 400);
+      };
+
+      window.restoreBanner = function() {
+        isDismissed = false;
+        localStorage.removeItem('tokenBannerDismissed');
+        tray.classList.remove('show');
+        banner.classList.add('show');
+        banner.style.transform = 'translateX(-50%) translateY(0)';
+        banner.style.opacity = '1';
+      };
+
+      async function updateTokenBanner() {
+        try {
+          const res = await fetch('/my_token_status');
+          const data = await res.json();
+          
+          if (data.success && (data.status === 'active' || data.status === 'skipped')) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/.test(navigator.userAgent);
+            const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+            // ── Push Notifications (Android & iOS PWA) ──────────────────
+            const supportsNotif = typeof Notification !== 'undefined' && 'serviceWorker' in navigator;
+
+            // iOS requires standalone (installed PWA). Android Chrome can notify from browser too.
+            const canReceiveNotif = supportsNotif && Notification.permission === 'granted' &&
+                                    (isAndroid || isStandalone);
+
+            if (canReceiveNotif) {
+              const ahead   = data.patients_ahead;
+              const liveDoc = data.doctor_name;
+              const liveTok = data.current_token;
+              const yourTok = data.your_token;
+
+              // Robust: send via SW postMessage (works reliably on Chrome Android + iOS PWA)
+              function sendSwNotif(title, body, tag, vibrate, renotify) {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.ready.then(reg => {
+                    if (reg.active) {
+                      // SW always uses silent:false — visible in notification shade
+                      reg.active.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title, body, tag,
+                        vibrate: vibrate || null,
+                        renotify: renotify !== false,
+                        url: '/patient_dashboard'
+                      });
+                    } else {
+                      // Fallback: direct showNotification — silent:false for shade visibility
+                      reg.showNotification(title, {
+                        body, tag, icon: '/static/android-chrome-192x192.png',
+                        badge: '/static/favicon-32x32.png',
+                        vibrate: vibrate || undefined,
+                        renotify: renotify !== false,
+                        silent: false,
+                        data: { url: '/patient_dashboard' }
+                      }).catch(() => {});
+                    }
+                  }).catch(() => {});
+                }
+              }
+
+              // 1️⃣  Persistent live-tracking: replace/update single notification
+              const liveKey  = `live_tok_${liveDoc}_${yourTok}`;
+              const lastLive = sessionStorage.getItem(liveKey);
+              if (String(liveTok) !== lastLive && data.status === 'active') {
+                sessionStorage.setItem(liveKey, String(liveTok));
+                sendSwNotif(
+                  '🔄 Live Tracking',
+                  `${liveDoc}  ·  Now: #${liveTok}  ·  Your Token: #${yourTok}`,
+                  'primecare-live',
+                  null,   // silent — no vibration for routine updates
+                  false   // renotify false — silently update existing notification
+                );
+              }
+
+              // 2️⃣  Alert: vibrate at 2 / 1 / 0 tokens ahead
+              const alertKey  = `alerted_${liveDoc}_${yourTok}`;
+              const lastAlert = sessionStorage.getItem(alertKey);
+              if (ahead <= 2 && ahead >= 0 && String(ahead) !== lastAlert && data.status === 'active') {
+                sessionStorage.setItem(alertKey, String(ahead));
+                const alertBody = ahead === 0
+                  ? `It's your turn! Proceed to ${liveDoc} immediately.`
+                  : ahead === 1
+                  ? `You're next for ${liveDoc}. Please be ready!`
+                  : `2 patients ahead — ${liveDoc}. Get ready soon.`;
+                sendSwNotif(
+                  '🔔 Token Alert',
+                  alertBody,
+                  'primecare-alert',
+                  [300, 100, 300, 100, 500],
+                  true
+                );
+              }
+
+              // 3️⃣  Skipped notification
+              if (data.status === 'skipped') {
+                const skipKey = `skipped_alert_${liveDoc}_${yourTok}`;
+                if (!sessionStorage.getItem(skipKey)) {
+                  sessionStorage.setItem(skipKey, '1');
+                  sendSwNotif(
+                    '⚠️ Token Skipped',
+                    `Your token was skipped. Please contact the reception.`,
+                    'primecare-skip',
+                    [400, 200, 400],
+                    true
+                  );
+                }
+              }
+            }
+
+            // Show permission card if not yet granted
+            if (isMobile && supportsNotif && Notification.permission === 'default' && (isAndroid || isStandalone)) {
+              showNotifPermCard();
+            }
+
+            hasNotification = true;
+            docName.textContent = data.doctor_name;
+            liveTokenEl.textContent = data.current_token;
+            yourTokenEl.textContent = data.your_token;
+            
+            banner.dataset.doc = data.doctor_name;
+            banner.dataset.date = data.date;
+
+            const ahead = data.patients_ahead;
+            // Skipped: send to mobile notification center only, hide in-app banner
+            if (data.status === 'skipped') {
+              banner.classList.remove('show');
+              tray.classList.remove('show');
+              hasNotification = false;
+              return;
+            } else if (ahead === 0) {
+              statusText.innerHTML = `<span style="color:#ef4444;">Your Turn Now!</span>`;
+            } else if (ahead === 1) {
+              statusText.innerHTML = `<span style="color:#f97316;">Next You!</span>`;
+            } else {
+              statusText.textContent = "Live Status";
+            }
+
+
+            if (!isDismissed) {
+              banner.classList.add('show');
+            } else {
+              tray.classList.add('show');
+            }
+            lucide.createIcons();
+          } else {
+            hasNotification = false;
+            banner.classList.remove('show');
+            tray.classList.remove('show');
+          }
+        } catch(e) {
+          console.error("Live banner update failed", e);
+        }
+      }
+
+      const userLoggedIn = {{ 'true' if 'user_id' in session else 'false' }};
+      const isPatient = {{ 'true' if session.get('user_role') == 'patient' else 'false' }};
+
+      if (userLoggedIn && isPatient) {
+          updateTokenBanner();
+          setInterval(updateTokenBanner, 5000); 
+      }
+    })();
+
+    // ─── Shared Swipe Dismiss Helper ───────────────────────────────────
+    function _addSwipeDismiss(el, onDismiss, skipSelector) {
+      let sX = 0, cX = 0, sw = false;
+      el.addEventListener('touchstart', e => {
+        if (skipSelector && e.target.closest(skipSelector)) return;
+        sX = e.touches[0].clientX; sw = true; el.style.transition = 'none';
+      }, {passive:true});
+      el.addEventListener('touchmove', e => {
+        if (!sw) return;
+        cX = e.touches[0].clientX - sX;
+        el.style.transform = `translateX(calc(-50% + ${cX}px))`;
+        el.style.opacity = String(Math.max(0, 1 - Math.abs(cX) / 180));
+      }, {passive:true});
+      el.addEventListener('touchend', () => {
+        sw = false;
+        el.style.transition = 'transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.3s ease';
+        if (Math.abs(cX) > 100) { onDismiss(cX); }
+        else {
+          el.style.transform = 'translateX(-50%)';
+          el.style.opacity = '1';
+        }
+        cX = 0;
+      }, {passive:true});
+    }
+    function _slideOut(el, dir, storageKey) {
+      if (storageKey) sessionStorage.setItem(storageKey, '1');
+      el.style.transition = 'transform 0.45s ease, opacity 0.3s ease';
+      el.style.transform = dir >= 0 ? 'translateX(120vw)' : 'translateX(-120vw)';
+      el.style.opacity = '0';
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 460);
+    }
+
+    // ─── Notification Permission Card (premium glass design) ───────────
+    let _notifCardShown = false;
+    function showNotifPermCard() {
+      // Force card to show if permission is default, even on reload, unless swiped in this session
+      if (_notifCardShown) return;
+      _notifCardShown = true;
+      if (sessionStorage.getItem('notifCardDismissed')) return;
+
+      const card = document.createElement('div');
+      card.id = 'notifPermCard';
+      card.style.cssText = `
+        position:fixed; bottom:24px; left:50%;
+        transform:translateX(-50%) translateY(180px);
+        width:90%; max-width:390px;
+        background:linear-gradient(135deg,rgba(255,255,255,0.97),rgba(236,248,255,0.97));
+        backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+        padding:1.1rem; border-radius:23px;
+        box-shadow:0 20px 60px rgba(0,119,182,0.18),0 4px 16px rgba(0,0,0,0.07),
+                   inset 0 0 0 1.5px rgba(255,255,255,0.85);
+        border:1.5px solid rgba(0,119,182,0.14);
+        display:flex; flex-direction:column; gap:0.95rem;
+        transition:transform 0.65s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.4s ease;
+        touch-action:pan-x; user-select:none; z-index:9998;
+      `;
+      card.innerHTML = `
+        <div style="display:flex; align-items:center; gap:0.95rem; width:100%;">
+          <div style="
+            background:linear-gradient(140deg,#0077b6,#00b4d8);
+            width:50px; height:50px; border-radius:16px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 8px 22px rgba(0,119,182,0.38);
+          ">
+            <i data-lucide="bell-ring" style="width:23px;height:23px;color:white;"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:800; font-size:1rem; color:#0c1a2e; letter-spacing:-0.01em;">Enable Live Alerts</div>
+            <div style="font-size:0.78rem; color:#64748b; line-height:1.45; margin-top:2px;">Know when your token is near. <span style="color:#94a3b8;font-style:italic;">Swipe to dismiss.</span></div>
+          </div>
+        </div>
+        <button id="enableNotifBtn" style="
+          width:100%;
+          background:linear-gradient(135deg,#0077b6,#0096c7); color:#fff; border:none;
+          padding:0.75rem 1rem; border-radius:14px; font-size:0.95rem; font-weight:800;
+          cursor:pointer; font-family:inherit;
+          box-shadow:0 6px 18px rgba(0,119,182,0.35); text-align:center;
+          letter-spacing:0.01em; margin-top:0 !important;
+        ">Enable Notification</button>
+      `;
+      document.body.appendChild(card);
+      if (typeof lucide !== 'undefined') lucide.createIcons(card);
+      requestAnimationFrame(() => { card.style.transform = 'translateX(-50%) translateY(0)'; });
+
+      document.getElementById('enableNotifBtn').addEventListener('click', async e => {
+        e.stopPropagation();
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(async reg => {
+              try {
+                const vapidPublicKey = 'BOoeVMyifl6JFZhRdmlSNpg5vvdTAUAXZqrAMX3ONaZoffmW48-ohbJFUzZzhxkvxxm_z7gwmpf0-xqoe6dMpEU';
+                const padding = '='.repeat((4 - vapidPublicKey.length % 4) % 4);
+                const base64 = (vapidPublicKey + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                const rawData = window.atob(base64);
+                const outputArray = new Uint8Array(rawData.length);
+                for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
+                
+                const subscription = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: outputArray
+                });
+                
+                await fetch('/api/save_subscription', {
+                  method: 'POST',
+                  body: JSON.stringify(subscription),
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              } catch (err) {
+                console.error("Web Push Subscription Error:", err);
+              }
+
+              reg.showNotification('PrimeCare', {
+                body: "Alerts enabled! You will be notified when your turn is near.",
+                icon: '/static/android-chrome-192x192.png',
+                badge: '/static/favicon-32x32.png',
+                vibrate: [200, 100, 200]
+              }).catch(() => {
+                try { new Notification('PrimeCare', { body: "Alerts enabled!", icon: '/static/android-chrome-192x192.png' }); } catch(err) {}
+              });
+            });
+          } else {
+            try { new Notification('PrimeCare', { body: "Alerts enabled! You will be notified.", icon: '/static/android-chrome-192x192.png' }); } catch(err) {}
+          }
+        }
+        _slideOut(card, 1, 'notifCardDismissed');
+        _notifCardShown = false; 
+      });
+      _addSwipeDismiss(card, dir => _slideOut(card, dir, 'notifCardDismissed'));
+    }
+
+    // ─── Unified Install Guide (iOS Share / Android Menu) ────────────
+    (function initInstallGuide() {
+      const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isAndroid    = /Android/.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      if (isStandalone || sessionStorage.getItem('installGuideDismissed')) return;
+      if (!isIOS && !isAndroid) return;
+
+      // Android: capture deferredPrompt if available
+      let deferredPrompt = null;
+      if (isAndroid) {
+        window.addEventListener('beforeinstallprompt', e => {
+          e.preventDefault(); deferredPrompt = e;
+        });
+      }
+
+      setTimeout(() => {
+        const guide = document.createElement('div');
+        guide.style.cssText = `
+          position:fixed; bottom:24px; left:50%;
+          transform:translateX(-50%);
+          width:90%; max-width:390px;
+          background:linear-gradient(135deg,rgba(255,255,255,0.97),rgba(236,248,255,0.97));
+          backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+          padding:1.1rem 1.2rem; border-radius:22px;
+          box-shadow:0 20px 60px rgba(0,119,182,0.16),0 4px 16px rgba(0,0,0,0.07),
+                     inset 0 0 0 1.5px rgba(255,255,255,0.85);
+          border:1.5px solid rgba(0,119,182,0.14);
+          display:flex; align-items:center; gap:1rem;
+          animation:slideUpCard 0.7s cubic-bezier(0.175,0.885,0.32,1.275);
+          touch-action:pan-x; user-select:none; cursor:grab; z-index:10000;
+        `;
+
+        if (isIOS) {
+          guide.innerHTML = `
+            <div id="installActionBtn" style="
+              background:linear-gradient(140deg,#0077b6,#00b4d8); color:#fff;
+              width:50px; height:50px; border-radius:16px; flex-shrink:0;
+              display:flex; align-items:center; justify-content:center;
+              cursor:pointer; box-shadow:0 8px 22px rgba(0,119,182,0.38);
+              animation:ios-pulse 2.5s ease-in-out infinite;
+            ">
+              <i data-lucide="share" style="width:22px;height:22px;"></i>
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:800;font-size:0.95rem;color:#0c1a2e;letter-spacing:-0.01em;">Add to Home Screen</div>
+              <div style="font-size:0.78rem;color:#475569;line-height:1.45;margin-top:3px;">Tap <span style="font-weight:800;color:#0077b6;">Share</span> then <b style="color:#0f172a;">'Add to Home Screen'</b> for real-time alerts &amp; live tracking.</div>
+              <div style="font-size:0.7rem;color:#94a3b8;margin-top:5px;font-style:italic;">Swipe to dismiss</div>
+            </div>
+          `;
+        } else {
+          guide.innerHTML = `
+            <div style="
+              width:50px; height:50px; border-radius:16px; flex-shrink:0;
+              overflow:hidden; box-shadow:0 8px 22px rgba(0,119,182,0.3);
+            ">
+              <img src="/static/android-chrome-192x192.png" style="width:100%;height:100%;object-fit:cover;">
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:800;font-size:0.95rem;color:#0c1a2e;letter-spacing:-0.01em;">Add to Home Screen</div>
+              <div id="installActionBtn" style="font-size:0.78rem;color:#475569;line-height:1.45;margin-top:3px;cursor:pointer;">Tap <span style="font-weight:800;color:#0077b6;">⋮ Menu</span> then <b style="color:#0f172a;">'Add to Home Screen'</b> for push alerts &amp; live tracking.</div>
+              <div style="font-size:0.7rem;color:#94a3b8;margin-top:5px;font-style:italic;">Swipe to dismiss</div>
+            </div>
+          `;
+        }
+
+        document.body.appendChild(guide);
+        if (window.lucide) lucide.createIcons(guide);
+
+        // Action button click
+        const btn = guide.querySelector('#installActionBtn');
+        btn && btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          if (isIOS) {
+            if (navigator.share) {
+              try { await navigator.share({ title:'PrimeCare Clinic', text:'Real-time Hospital Token Tracking', url:window.location.href }); }
+              catch(err) {}
+            } else {
+              alert("Tap the Share icon \u2197 in Safari's bottom bar, then choose 'Add to Home Screen'.");
+            }
+          } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            if (result.outcome === 'accepted') _slideOut(guide, 1, 'installGuideDismissed');
+          }
+        });
+
+        _addSwipeDismiss(guide, dir => _slideOut(guide, dir, 'installGuideDismissed'), '#installActionBtn');
+      }, 3000);
+    })();
+
+    function confirmRoleSwitch() {
+        openUniversalModal('Switch to Doctor Account', 'Are you sure you want to switch to your doctor dashboard?', 'Switch Now', async () => {
+            const res = await fetch('/switch_active_role', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.msg, 'success');
+                setTimeout(() => window.location.href = data.redirect_url, 1000);
+            } else {
+                showToast(data.msg, 'error');
+            }
+        }, true);
+    }
+  </script>
+</body>
+</html>
