@@ -12,6 +12,7 @@ cssselect2==0.8.0
 Flask==2.3.2
 git-filter-repo==2.47.0
 google-auth==2.40.3
+gunicorn
 google-auth-oauthlib==1.2.2
 gspread==5.12.0
 html5lib==1.1
